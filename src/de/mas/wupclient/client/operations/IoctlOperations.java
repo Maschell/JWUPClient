@@ -89,4 +89,8 @@ public class IoctlOperations extends Operations {
         getClient().free(iovecs);
         return new Result<byte[][]>(ret,out_data);       
     }
+
+    public Result<byte[][]> ioctlv(int handle, int cmd, byte[][] inbufs, int[] outbuf_sizes) throws IOException {  
+        return ioctlv(handle,cmd,inbufs,outbuf_sizes,new int[0][],new int[0][]);
+    }
 }

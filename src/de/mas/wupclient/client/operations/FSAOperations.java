@@ -1,14 +1,13 @@
 package de.mas.wupclient.client.operations;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
 import de.mas.wupclient.client.WUPClient;
 import de.mas.wupclient.client.utils.FEntry;
+import de.mas.wupclient.client.utils.Logger;
 import de.mas.wupclient.client.utils.Result;
 import de.mas.wupclient.client.utils.Utils;
 
@@ -23,7 +22,7 @@ public class FSAOperations extends Operations {
     
     private IoctlOperations ioctl = null; 
 
-    public FSAOperations(WUPClient client) {
+    private FSAOperations(WUPClient client) {
         super(client);
         setIoctlOperations(IoctlOperations.IoctlOperationsFactory(client));
     }
@@ -42,11 +41,7 @@ public class FSAOperations extends Operations {
               
         Result<byte[]> res = ioctl.ioctl(handle, 0x0A, inbuffer, 0x293);
         
-        ByteBuffer destByteBuffer = ByteBuffer.allocate(0x04);
-        destByteBuffer.order(ByteOrder.BIG_ENDIAN);
-        destByteBuffer.put(Arrays.copyOfRange(res.getData(), 0x04, 0x08));
-        
-        return new Result<Integer>(res.getResultValue(),destByteBuffer.getInt(0x00));
+        return new Result<Integer>(res.getResultValue(),Utils.bigEndianByteArrayToInt(Arrays.copyOfRange(res.getData(), 0x04, 0x08)));
     }
     
     public int FSA_CloseDir(int handle, int dirhandle) throws IOException{
@@ -61,14 +56,67 @@ public class FSAOperations extends Operations {
         Utils.writeIntToByteArray(inbuffer,dirhandle,4);
        
         Result<byte[]> res = ioctl.ioctl(fsa_handle, 0x0B, inbuffer, 0x293);
-        
+       
         byte[] unknowndata = Arrays.copyOfRange(res.getData(), 0x04, 0x68);
-        
         String filename = Utils.getStringFromByteArray(Arrays.copyOfRange(res.getData(), 0x68, res.getData().length));
         if(res.getResultValue() == 0){
-            return new Result<FEntry>(res.getResultValue(),new FEntry(filename,((unknowndata[0] & 0x01) == 0x01),unknowndata));
+            return new Result<FEntry>(res.getResultValue(),new FEntry(filename,((char)unknowndata[0] & 128) != 128,unknowndata));
         }else{
             return new Result<FEntry>(res.getResultValue(),null);
         }   
+    }
+    
+    public int FSA_Mount(int handle, String device_path, String volume_path, int flags) throws IOException{
+        Logger.logCmd("Mounting " + device_path + " to " + volume_path);
+        byte[] inbuffer = new byte[0x520];
+        Utils.writeNullTerminatedStringToByteArray(inbuffer, device_path, 0x0004);
+        Utils.writeNullTerminatedStringToByteArray(inbuffer, volume_path, 0x0284);
+        Utils.writeIntToByteArray(inbuffer,flags,0x0504);
+       
+        Result<byte[][]> result = ioctl.ioctlv(handle, 0x01, new byte[][] {inbuffer,new byte[0]}, new int[]{0x293});
+        return result.getResultValue();
+    }
+    
+    public int FSA_Unmount(int handle, String volume_path, int flags) throws IOException{  
+        Logger.logCmd("Unmounting " + volume_path);
+        byte[] inbuffer = new byte[0x520];
+        Utils.writeNullTerminatedStringToByteArray(inbuffer, volume_path, 0x04);
+        Utils.writeIntToByteArray(inbuffer,flags,0x284);
+        Result<byte[]> result = ioctl.ioctl(handle,0x02,inbuffer,0x293);
+        return result.getResultValue();
+    }
+    
+    public int FSA_MakeDir(int handle, String path, int flags) throws IOException{  
+        byte[] inbuffer = new byte[0x520];
+        Utils.writeNullTerminatedStringToByteArray(inbuffer, path, 0x04);
+        Utils.writeIntToByteArray(inbuffer,flags,0x284);
+        Result<byte[]> result = ioctl.ioctl(handle, 0x07, inbuffer, 0x293);
+        return result.getResultValue();
+    }
+    
+    public Result<Integer> FSA_OpenFile(int handle, String path, String mode) throws IOException{
+        byte[] inbuffer = new byte[0x520];
+        Utils.writeNullTerminatedStringToByteArray(inbuffer, path, 0x04);
+        Utils.writeNullTerminatedStringToByteArray(inbuffer, mode, 0x284);
+        Result<byte[]> result = ioctl.ioctl(handle, 0x0E, inbuffer, 0x293);
+        
+        return new Result<Integer>(result.getResultValue(),Utils.bigEndianByteArrayToInt(Arrays.copyOfRange(result.getData(), 0x04, 0x08)));
+    }
+    
+    public int FSA_CloseFile(int handle, int file_handle) throws IOException{
+        byte[] inbuffer = new byte[0x520];
+        Utils.writeIntToByteArray(inbuffer, file_handle, 0x04);
+        Result<byte[]> res = ioctl.ioctl(handle, 0x15, inbuffer, 0x293);
+        return res.getResultValue();
+    }     
+    
+    public Result<byte[]> FSA_ReadFile(int handle, int file_handle, int size, int cnt) throws IOException{
+        byte[] inbuffer = new byte[0x520];
+        Utils.writeIntToByteArray(inbuffer, size, 0x08);
+        Utils.writeIntToByteArray(inbuffer, cnt, 0x0C);
+        Utils.writeIntToByteArray(inbuffer, file_handle, 0x14);
+        Result<byte[][]> result = ioctl.ioctlv(handle, 0x0F, new byte[][] {inbuffer}, new int[]{size * cnt,0x293});
+        
+        return new Result<byte[]>(result.getResultValue(),result.getData()[0]);
     }
 }
