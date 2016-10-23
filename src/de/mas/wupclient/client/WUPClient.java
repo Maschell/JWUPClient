@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
+import de.mas.wupclient.client.utils.Logger;
 import de.mas.wupclient.client.utils.Result;
 
 public class WUPClient {
@@ -30,9 +31,9 @@ public class WUPClient {
         destByteBuffer.putInt(command);
         destByteBuffer.put(data);
         try {
-            outToServer.write(destByteBuffer.array());
-            
+            outToServer.write(destByteBuffer.array());            
         } catch (IOException e) {
+            Logger.logErr("send failed");
             e.printStackTrace();
         }
         destByteBuffer.clear();
@@ -53,7 +54,7 @@ public class WUPClient {
        if(result.getResultValue() == 0){
            return result.getData();
        }else{
-           System.out.println("Read error: " + result.getResultValue());
+           Logger.logErr("Read error: " + result.getResultValue());
            return null;
        }
    }
@@ -68,7 +69,7 @@ public class WUPClient {
        if(result.getResultValue() == 0){
            return result.getResultValue();
        }else{
-           System.out.println("write error: " + result.getResultValue());
+           Logger.logErr("write error: " + result.getResultValue());
            return -1;
        }
    }
@@ -83,14 +84,12 @@ public class WUPClient {
        
        Result<byte[]> result = send(2,destByteBuffer.array());
        if(result.getResultValue() == 0){
-           destByteBuffer.clear();
-           destByteBuffer =  ByteBuffer.allocate(result.getData().length);
-           destByteBuffer.rewind();
+           destByteBuffer = ByteBuffer.allocate(0x04);
            destByteBuffer.order(ByteOrder.BIG_ENDIAN);
-           destByteBuffer.put(result.getData());
+           destByteBuffer.put(Arrays.copyOfRange(result.getData(), 0, 0x04));
            return destByteBuffer.getInt(0);
        }else{
-           System.out.println("svc error: " + result.getResultValue());
+           Logger.logErr("svc error: " + result.getResultValue());
            return -1;
        }
    }
@@ -110,7 +109,7 @@ public class WUPClient {
        if(result.getResultValue() == 0){
            return result.getResultValue();
        }else{
-           System.out.println("memcpy error: " + result.getResultValue());
+           Logger.logErr("memcpy error: " + result.getResultValue());
            return -1;
        }
    }
@@ -121,29 +120,19 @@ public class WUPClient {
        if(size == 0){
            return 0;
        }
-       if(align == 0){
-           int[] buffer = new int[2];
-           buffer[0] = 0xCAFF;
-           buffer[1] = size;      
-           int result = svc(0x27, buffer);
+       if(align == 0){ 
+           int result = svc(0x27, new int[] {0xCAFF,size});
            return result;
        }else{
-           int[] buffer = new int[3];
-           buffer[0] = 0xCAFF;
-           buffer[1] = size; 
-           buffer[2] = align; 
-           int result = svc(0x28, buffer);
+           int result = svc(0x28, new int[] {0xCAFF,size,align});
            return result;
        }
    }
    public int free(int address) throws IOException{
        if(address == 0){
            return 0;
-       }      
-       int[] buffer = new int[2];
-       buffer[0] = 0xCAFF;
-       buffer[1] = address;           
-       return svc(0x29, buffer);      
+       }
+       return svc(0x29, new int[] {0xCAFF,address});      
    }
    
    public int load_buffer(byte[] data) throws IOException{
@@ -173,20 +162,13 @@ public class WUPClient {
    }
    
    public int open(String device, int mode) throws IOException{
-       int address = load_string(device);
-       
-       int[] buffer = new int[2];
-       buffer[0] = address;
-       buffer[1] = mode;
-      
-       int handle = svc(0x33, buffer);
+       int address = load_string(device);      
+       int handle = svc(0x33,  new int[] {address,mode});
        free(address);
        return handle;
    }
    public int close(int handle) throws IOException{
-       int[] buffer = new int[1];
-       buffer[0] =  handle;
-       return svc(0x34,buffer);
+       return svc(0x34,new int[]{handle});
    }  
    
    public int get_fsa_handle() throws IOException{
@@ -197,20 +179,13 @@ public class WUPClient {
    }
    
    public int FSA_Close(int handle) throws IOException{
-       int[] buffer = new int[1];
-       buffer[0] = handle;
-       int result = svc(0x34, buffer);
+       int result = svc(0x34, new int[]{handle});
        if(result == 0){
            setFsaHandle(-1);
+       }else{
+           Logger.logErr("FSA_Close: failed");
        }
        return result;
-   }
-    
-   public byte[] intToByteArray(int number){
-       ByteBuffer destByteBuffer = ByteBuffer.allocate(4);
-       destByteBuffer.order(ByteOrder.BIG_ENDIAN);
-       destByteBuffer.putInt(number);
-       return destByteBuffer.array();
    }
       
     private Socket createSocket(String ip) {
@@ -218,14 +193,14 @@ public class WUPClient {
         try {
             clientSocket = new Socket(ip, 1337);
         } catch (UnknownHostException e) {
-            System.err.println("Unkown Host");
+            Logger.logErr("Unkown Host");
             e.printStackTrace();
         } catch (IOException e) {
-            System.err.println("IO Error Host");
+            Logger.logErr("IO Error Host");
             e.printStackTrace();
         }
         setSocket(clientSocket);
-        System.out.println("Connected");
+        Logger.log("Connected");
         return clientSocket;        
     }
     

@@ -8,6 +8,7 @@ import java.util.Map;
 
 import de.mas.wupclient.client.WUPClient;
 import de.mas.wupclient.client.utils.FEntry;
+import de.mas.wupclient.client.utils.Logger;
 import de.mas.wupclient.client.utils.Result;
 
 public class UtilOperations extends Operations {
@@ -35,6 +36,13 @@ public class UtilOperations extends Operations {
         return ls(targetPath,false);
     }
     public List<FEntry> ls(String targetPath,boolean return_data) throws IOException{
+        if(!return_data){
+            if(targetPath != null){
+                Logger.logCmd("ls(" + targetPath + ")");
+            }else{
+                Logger.logCmd("ls()");
+            }
+        }
         List<FEntry> results = new ArrayList<>();
         int fsa_handle = getClient().get_fsa_handle();
         String path = targetPath;
@@ -44,7 +52,7 @@ public class UtilOperations extends Operations {
         
         Result<Integer> res = fsa.FSA_OpenDir(fsa_handle, path);
         if(res.getResultValue() != 0x0){
-           System.out.println("opendir error : " + String.format("%08X",res.getResultValue()));
+           Logger.logErr("opendir error : " + String.format("%08X",res.getResultValue()));
         }
         
         int dirhandle = res.getData();
@@ -59,9 +67,9 @@ public class UtilOperations extends Operations {
             }
             if(!return_data){
                 if(entry.isFile()){
-                    System.out.println(entry.getFilename());               
+                    Logger.log(entry.getFilename());               
                 }else{
-                    System.out.println(entry.getFilename() + "/");
+                    Logger.log(entry.getFilename() + "/");
                 }
             }else{
                 results.add(entry);
@@ -69,7 +77,7 @@ public class UtilOperations extends Operations {
         }
         int result;
         if((result = fsa.FSA_CloseDir(fsa_handle, dirhandle)) != 0){
-            System.err.println("CloseDirdone failed!" + result);
+            Logger.logErr("CloseDir failed!" + result);
         }
         return results;
  }

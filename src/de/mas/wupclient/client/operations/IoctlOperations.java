@@ -6,9 +6,9 @@ import java.nio.ByteOrder;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.mas.wupclient.Utils;
 import de.mas.wupclient.client.WUPClient;
 import de.mas.wupclient.client.utils.Result;
+import de.mas.wupclient.client.utils.Utils;
 
 public class IoctlOperations extends Operations {    
     private static Map<WUPClient,IoctlOperations> instances = new HashMap<>();
@@ -29,26 +29,12 @@ public class IoctlOperations extends Operations {
         int ret;
         
         if(outbuf_size > 0){
-            int out_address = getClient().alloc(outbuf_size);
-            int[] buffer =  new int[6];
-            buffer[0] = handle;
-            buffer[1] = cmd;
-            buffer[2] = in_address;
-            buffer[3] = inbuf.length;
-            buffer[4] = out_address;
-            buffer[5] = outbuf_size;           
-            ret = getClient().svc(0x38, buffer);
+            int out_address = getClient().alloc(outbuf_size);          
+            ret = getClient().svc(0x38, new int[] {handle,cmd,in_address,inbuf.length,out_address,outbuf_size});
             out_data = getClient().read(out_address, outbuf_size);
             getClient().free(out_address);
         }else{
-            int[] buffer =  new int[6];
-            buffer[0] = handle;
-            buffer[1] = cmd;
-            buffer[2] = in_address;
-            buffer[3] = inbuf.length;
-            buffer[4] = 0;
-            buffer[5] = 0;
-            ret = getClient().svc(0x38, buffer);
+            ret = getClient().svc(0x38, new int[] {handle,cmd,in_address,inbuf.length,0,0});
         }
         getClient().free(in_address);
         return new Result<byte[]>(ret,out_data);
@@ -57,9 +43,9 @@ public class IoctlOperations extends Operations {
     public int iovec(int[][] inputData) throws IOException{       
         ByteBuffer destByteBuffer = ByteBuffer.allocate(inputData.length * (0x04*3));
         destByteBuffer.order(ByteOrder.BIG_ENDIAN);
-        for (int[] foo : inputData){          
-            destByteBuffer.putInt(foo[0]);
-            destByteBuffer.putInt(foo[1]);
+        for (int[] data : inputData){          
+            destByteBuffer.putInt(data[0]);
+            destByteBuffer.putInt(data[1]);
             destByteBuffer.putInt(0);           
         }          
         return getClient().load_buffer(destByteBuffer.array());
@@ -84,16 +70,9 @@ public class IoctlOperations extends Operations {
             i++;
         }
             
-        int[][] iovecs_buffer =  Utils.concatAll(new_inbufs,ínbufs_ptr,outbufs_ptr,new_outbufs);      
+        int iovecs = iovec(Utils.concatAll(new_inbufs,ínbufs_ptr,outbufs_ptr,new_outbufs));
 
-        int iovecs = iovec(iovecs_buffer);
-        int[] buffer = new int[5];
-        buffer[0] = handle;
-        buffer[1] = cmd;
-        buffer[2] = new_inbufs.length + ínbufs_ptr.length;
-        buffer[3] = new_outbufs.length + outbufs_ptr.length;
-        buffer[4] = iovecs;       
-        int  ret = getClient().svc(0x39, buffer);
+        int  ret = getClient().svc(0x39, new int[]{handle,cmd,new_inbufs.length + ínbufs_ptr.length,new_outbufs.length + outbufs_ptr.length,iovecs});
         
         byte[][] out_data = new byte[new_outbufs.length][];
         i=0;
