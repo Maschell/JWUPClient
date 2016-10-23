@@ -65,10 +65,7 @@ public class Utils {
     }
     
     public static byte[] intToBigEndianByteArray(int value){
-        ByteBuffer destByteBuffer = ByteBuffer.allocate(4);
-        destByteBuffer.order(ByteOrder.BIG_ENDIAN);
-        destByteBuffer.putInt(value);
-        return destByteBuffer.array();
+        return m_packBE(value);
     }
     
     public static int bigEndianByteArrayToInt(byte[] data){
@@ -139,7 +136,7 @@ public class Utils {
              String  company_code = document.getElementsByTagName("company_code").item(0).getTextContent().toString();
              String content_platform = document.getElementsByTagName("content_platform").item(0).getTextContent().toString();
              String region = document.getElementsByTagName("region").item(0).getTextContent().toString();
-             MetaInformation nusinfo = new MetaInformation(Utils.StringToLong(title_id),longname,ID6,proc,content_platform,company_code,(int) StringToLong(region),new String[1]);
+             MetaInformation nusinfo = new MetaInformation(Utils.StringToLong(title_id),longname,ID6,proc,content_platform,company_code,(int) StringToLong(region));
              return nusinfo;
             
         } catch (ParserConfigurationException | SAXException | IOException e) {
@@ -169,5 +166,44 @@ public class Utils {
             }           
         }
     }
+    
+    public static byte[] m_packBE(Object... args){
+        return m_pack(ByteOrder.BIG_ENDIAN,args);
+     }
+     
+     public static byte[] m_pack(ByteOrder order,Object... args){
+         int totalLength = 0;
+         for(Object o :args){
+             if(o instanceof String){
+                 totalLength += ((String)o).getBytes().length;
+             }else if(o instanceof Integer){
+                 totalLength += 0x04;
+             }else if(o instanceof int[]){
+                 totalLength += 0x04 * ((int[])o).length;
+             }else if(o instanceof byte[]){
+                 totalLength += ((byte[])o).length;
+             }else{
+                 Logger.logErr("Can't use this datatype");
+             }
+         }
+         ByteBuffer destByteBuffer = ByteBuffer.allocate(totalLength);
+         destByteBuffer.order(order);
+         for(Object o :args){
+             if(o instanceof String){
+                 destByteBuffer.put(((String)o).getBytes());
+             }else if(o instanceof Integer){
+                 destByteBuffer.putInt((Integer)o);
+             }else if(o instanceof int[]){
+                 for(Integer i : ((int[])o)){
+                     destByteBuffer.putInt(i);
+                 }
+             }else if(o instanceof byte[]){
+                 destByteBuffer.put((byte[])o);
+             }else{
+                 Logger.logErr("Can't use this datatype");
+             }
+         }
+         return destByteBuffer.array();
+     }
     
 }

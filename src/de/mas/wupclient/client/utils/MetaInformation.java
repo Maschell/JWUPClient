@@ -1,8 +1,6 @@
 package de.mas.wupclient.client.utils;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
 
 public class MetaInformation implements Comparable<MetaInformation>, Serializable{
 	private static final long serialVersionUID = 1L;
@@ -109,9 +107,6 @@ public class MetaInformation implements Comparable<MetaInformation>, Serializabl
 	@Override
 	public String toString(){
 		String result =  getTitleIDAsString() + ";" + region +";" + getContent_platform() + ";" + getCompany_code() + ";"+ getProduct_code()+ ";" + getID6() + ";" + getLongnameEN();
-		for(Integer i :versions){
-			result += ";" + i;
-		}
 		return result;
 	}
 

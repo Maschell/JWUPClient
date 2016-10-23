@@ -20,26 +20,26 @@ public class FSAOperations extends Operations {
         return instances.get(client);        
     }
     
-    private IoctlOperations ioctl = null; 
+    private SystemOperations system = null; 
 
     private FSAOperations(WUPClient client) {
         super(client);
-        setIoctlOperations(IoctlOperations.IoctlOperationsFactory(client));
+        setIoctlOperations(SystemOperations.SystemOperationsFactory(client));
     }
 
-    public IoctlOperations getIoctlOperations() {
-        return ioctl;
+    public SystemOperations getIoctlOperations() {
+        return system;
     }
 
-    public void setIoctlOperations(IoctlOperations ioctl) {
-        this.ioctl = ioctl;
+    public void setIoctlOperations(SystemOperations ioctl) {
+        this.system = ioctl;
     }
     
     public Result<Integer> FSA_OpenDir(int handle, String path) throws IOException{
         byte[] inbuffer = new byte[0x520];
         Utils.writeNullTerminatedStringToByteArray(inbuffer, path, 0x04);       
               
-        Result<byte[]> res = ioctl.ioctl(handle, 0x0A, inbuffer, 0x293);
+        Result<byte[]> res = system.ioctl(handle, 0x0A, inbuffer, 0x293);
         
         return new Result<Integer>(res.getResultValue(),Utils.bigEndianByteArrayToInt(Arrays.copyOfRange(res.getData(), 0x04, 0x08)));
     }
@@ -47,7 +47,7 @@ public class FSAOperations extends Operations {
     public int FSA_CloseDir(int handle, int dirhandle) throws IOException{
         byte[] inbuffer = new byte[0x520];
         Utils.writeIntToByteArray(inbuffer, dirhandle, 0x04);
-        Result<byte[]> res = ioctl.ioctl(handle, 0x0D, inbuffer, 0x293);
+        Result<byte[]> res = system.ioctl(handle, 0x0D, inbuffer, 0x293);
         return res.getResultValue();
     }
     
@@ -55,7 +55,7 @@ public class FSAOperations extends Operations {
         byte[] inbuffer = new byte[0x520];
         Utils.writeIntToByteArray(inbuffer,dirhandle,4);
        
-        Result<byte[]> res = ioctl.ioctl(fsa_handle, 0x0B, inbuffer, 0x293);
+        Result<byte[]> res = system.ioctl(fsa_handle, 0x0B, inbuffer, 0x293);
        
         byte[] unknowndata = Arrays.copyOfRange(res.getData(), 0x04, 0x68);
         String filename = Utils.getStringFromByteArray(Arrays.copyOfRange(res.getData(), 0x68, res.getData().length));
@@ -73,7 +73,7 @@ public class FSAOperations extends Operations {
         Utils.writeNullTerminatedStringToByteArray(inbuffer, volume_path, 0x0284);
         Utils.writeIntToByteArray(inbuffer,flags,0x0504);
        
-        Result<byte[][]> result = ioctl.ioctlv(handle, 0x01, new byte[][] {inbuffer,new byte[0]}, new int[]{0x293});
+        Result<byte[][]> result = system.ioctlv(handle, 0x01, new byte[][] {inbuffer,new byte[0]}, new int[]{0x293});
         return result.getResultValue();
     }
     
@@ -82,7 +82,7 @@ public class FSAOperations extends Operations {
         byte[] inbuffer = new byte[0x520];
         Utils.writeNullTerminatedStringToByteArray(inbuffer, volume_path, 0x04);
         Utils.writeIntToByteArray(inbuffer,flags,0x284);
-        Result<byte[]> result = ioctl.ioctl(handle,0x02,inbuffer,0x293);
+        Result<byte[]> result = system.ioctl(handle,0x02,inbuffer,0x293);
         return result.getResultValue();
     }
     
@@ -90,7 +90,7 @@ public class FSAOperations extends Operations {
         byte[] inbuffer = new byte[0x520];
         Utils.writeNullTerminatedStringToByteArray(inbuffer, path, 0x04);
         Utils.writeIntToByteArray(inbuffer,flags,0x284);
-        Result<byte[]> result = ioctl.ioctl(handle, 0x07, inbuffer, 0x293);
+        Result<byte[]> result = system.ioctl(handle, 0x07, inbuffer, 0x293);
         return result.getResultValue();
     }
     
@@ -98,7 +98,7 @@ public class FSAOperations extends Operations {
         byte[] inbuffer = new byte[0x520];
         Utils.writeNullTerminatedStringToByteArray(inbuffer, path, 0x04);
         Utils.writeNullTerminatedStringToByteArray(inbuffer, mode, 0x284);
-        Result<byte[]> result = ioctl.ioctl(handle, 0x0E, inbuffer, 0x293);
+        Result<byte[]> result = system.ioctl(handle, 0x0E, inbuffer, 0x293);
         
         return new Result<Integer>(result.getResultValue(),Utils.bigEndianByteArrayToInt(Arrays.copyOfRange(result.getData(), 0x04, 0x08)));
     }
@@ -106,7 +106,7 @@ public class FSAOperations extends Operations {
     public int FSA_CloseFile(int handle, int file_handle) throws IOException{
         byte[] inbuffer = new byte[0x520];
         Utils.writeIntToByteArray(inbuffer, file_handle, 0x04);
-        Result<byte[]> res = ioctl.ioctl(handle, 0x15, inbuffer, 0x293);
+        Result<byte[]> res = system.ioctl(handle, 0x15, inbuffer, 0x293);
         return res.getResultValue();
     }     
     
@@ -115,7 +115,7 @@ public class FSAOperations extends Operations {
         Utils.writeIntToByteArray(inbuffer, size, 0x08);
         Utils.writeIntToByteArray(inbuffer, cnt, 0x0C);
         Utils.writeIntToByteArray(inbuffer, file_handle, 0x14);
-        Result<byte[][]> result = ioctl.ioctlv(handle, 0x0F, new byte[][] {inbuffer}, new int[]{size * cnt,0x293});
+        Result<byte[][]> result = system.ioctlv(handle, 0x0F, new byte[][] {inbuffer}, new int[]{size * cnt,0x293});
         
         return new Result<byte[]>(result.getResultValue(),result.getData()[0]);
     }
