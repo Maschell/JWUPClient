@@ -1,20 +1,14 @@
-package de.mas.wupclient;
+package de.mas.wupclient.client.utils;
 
-public class ReadDirReturn {
-    private int result;
+public class FEntry {
     private String filename;
     private boolean isFile;
     private byte[] unknowndata;
 
-    public ReadDirReturn(int result,String filename, boolean isFile, byte[] unknowndata) {
-        setResult(result);
+    public FEntry(String filename, boolean isFile, byte[] unknowndata) {
         setFilename(filename);
         setFile(isFile);
         setUnknowndata(unknowndata);
-    }
-
-    public ReadDirReturn(int resultValue) {
-        setResult(resultValue);
     }
 
     public byte[] getUnknowndata() {
@@ -40,13 +34,4 @@ public class ReadDirReturn {
     public void setFilename(String filename) {
         this.filename = filename;
     }
-    
-    public int getResult() {
-        return result;
-    }
-
-    public void setResult(int result) {
-        this.result = result;
-    }
-
 }
