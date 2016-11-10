@@ -1,10 +1,11 @@
 package de.mas.wupclient;
 import java.io.IOException;
+import java.util.Scanner;
 
 import de.mas.wupclient.client.WUPClient;
 import de.mas.wupclient.client.operations.DownloadUploadOperations;
+import de.mas.wupclient.client.operations.SpecialOperations;
 import de.mas.wupclient.client.operations.UtilOperations;
-import de.mas.wupclient.client.utils.Logger;
 
 public class Starter {
     public static void main(String args[]){
@@ -13,26 +14,114 @@ public class Starter {
             ip = args[0];
         }
         WUPClient w = new WUPClient(ip);
-        try {
-            UtilOperations util = UtilOperations.UtilOperationsFactory(w);
-            DownloadUploadOperations dlul = DownloadUploadOperations.DownloadUploadOperationsFactory(w);
-            util.dump_syslog();
-            
-            Logger.logCmd("Lets into the " + w.getCwd() + "/sys/title/00050010/10040200/" + " folder!");
-            util.lsRecursive(w.getCwd() + "/sys/title/00050010/10040200/");
-            Logger.logCmd("And download the /code/app.xml to /test/app.xml");
-            dlul.downloadFile(w.getCwd() + "/sys/title/00050010/10040200/code", "app.xml", "test", null);
-            Logger.logCmd("done!");
+        try {            
+            boolean exit = false;
+   
+            System.out.println("JWUPClient. Please enter a command. Enter \"exit\" to exit.");
+            System.out.println();
+            System.out.print(w.getCwd() + " > ");
+            Scanner reader = new Scanner(System.in);  // Reading from System.in
+            while(!exit){
+                
+                String input = reader.nextLine();
+                if(input.equals("exit")){
+                    exit = true;
+                    break;
+                }
+                processCommand(input,w);
+                System.out.println();
+                System.out.print(w.getCwd() + " > ");               
+            }
+            reader.close();
         } catch (IOException e) {
             e.printStackTrace();
         }finally {
             try {
                 w.FSA_Close(w.get_fsa_handle());
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
+            } catch (IOException e) {             
             }
             w.closeSocket();
         }
+    }
+
+    private static void processCommand(String input,WUPClient w) throws IOException {
+        if(input == null || input.isEmpty()){
+            return;
+        }
+        UtilOperations util = UtilOperations.UtilOperationsFactory(w);
+        SpecialOperations special = SpecialOperations.SpecialOperationsFactory(w);
+        DownloadUploadOperations dlul = DownloadUploadOperations.DownloadUploadOperationsFactory(w);
+        String[] inputs = input.split(" ");
+        switch(inputs[0]){
+            case "ls":
+                if(inputs.length > 1){
+                    util.ls(inputs[1]);
+                }else{
+                    util.ls();
+                }
+                break;
+            case "lsr":
+                util.lsRecursive();
+                break;
+            case "sysdump":
+                util.dump_syslog();
+                break;
+            case "cd":
+                if(inputs.length > 1){
+                    util.cd(inputs[1]);
+                }else{
+                    util.cd();
+                }
+                
+                break;
+            case "dldir":
+                String destination = null;
+                String source = w.getCwd();
+                boolean fullpath = false;
+                if(inputs.length > 1){                    
+                    for(int i = 1;i < inputs.length;i++){
+                        if(inputs[i].equals("-dst")){
+                            if(inputs.length >= i+1){
+                                destination = inputs[i+1];
+                                i++;
+                            }
+                        }else if(inputs[i].equals("-src")){
+                            if(inputs.length >= i+1){
+                                source = inputs[i+1];
+                                i++;
+                            }
+                        }else if(inputs[i].equals("-fullpath")){
+                            fullpath = true;                           
+                        }                        
+                    }
+                }
+                dlul.downloadFolder(source,destination,fullpath);
+                
+                break;
+            case "dl":
+                if(inputs.length == 2){
+                    dlul.downloadFile("", inputs[1]);
+                }else if(inputs.length == 3){
+                    dlul.downloadFile("", inputs[1], inputs[2]);
+                }
+                
+                break;
+            case "dlfp": //download to full path
+                if(inputs.length == 2){
+                    dlul.downloadFile("", inputs[1],w.getCwd());
+                }else if(inputs.length == 3){
+                    dlul.downloadFile("", inputs[1],inputs[2] + "/" + w.getCwd());
+                }
+                
+                break;
+            case "nandtickets": //download to full path
+                special.parseAndDownloadTickets();
+                
+                break;
+            default:
+                System.out.println("Command not found!");
+                break;
+        }
+        
     }
 }

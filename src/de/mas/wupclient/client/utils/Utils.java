@@ -44,7 +44,7 @@ public class Utils {
     
     public static String getStringFromByteArray(byte[] data){
         int i = 0;
-        while(data[i] != 0 && (i) < data.length){
+        while(data[i] != 0 && (i) < data.length-1){
             i++;
         }
         String string = "";
@@ -145,8 +145,23 @@ public class Utils {
         return null;
     }
     
-    public static void createSubfolder(String folder){
+    public static String getParentDir(String path){
+        if(path == null || path.isEmpty() || path.equals("/")){
+            return "/";
+        }
+        String new_path = "";
+        String [] pathpath = path.split("/");
+        for(int i = 0;i<pathpath.length-1;i++){
+            if(!pathpath[i].equals("")){                
+                new_path += "/" + pathpath[i] ;
+            }
+        }
+        return new_path;
         
+    }
+    
+    public static void createSubfolder(String folder){
+        if(folder.endsWith("/")) folder += "_";
         String [] path = folder.split("/");     
         File folder_ = null;
         String foldername = new String();

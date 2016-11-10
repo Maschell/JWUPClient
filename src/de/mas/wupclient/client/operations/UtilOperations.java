@@ -39,11 +39,12 @@ public class UtilOperations extends Operations {
         return ls(targetPath,false);
     }
     public List<FEntry> ls(String targetPath,boolean return_data) throws IOException{
+        
         if(!return_data){
             if(targetPath != null){
-                Logger.logCmd("ls(" + targetPath + ")");
+                //Logger.logCmd("ls(" + targetPath + ")");
             }else{
-                Logger.logCmd("ls()");
+                //Logger.logCmd("ls()");
             }
         }
         List<FEntry> results = new ArrayList<>();
@@ -51,6 +52,8 @@ public class UtilOperations extends Operations {
         String path = targetPath;
         if(targetPath == null || targetPath.isEmpty()){
             path = getClient().getCwd();
+        }else if(!targetPath.startsWith("/")){
+            path = getClient().getCwd() + "/" + targetPath;
         }
         
         Result<Integer> res = fsa.FSA_OpenDir(fsa_handle, path);
@@ -82,6 +85,7 @@ public class UtilOperations extends Operations {
         if((result = fsa.FSA_CloseDir(fsa_handle, dirhandle)) != 0){
             Logger.logErr("CloseDir failed!" + result);
         }
+        getClient().FSA_Close(getClient().get_fsa_handle());
         return results;
     }
     
@@ -89,7 +93,7 @@ public class UtilOperations extends Operations {
         lsRecursive(getClient().getCwd() + "/");        
     }
     
-    public void lsRecursive(String path) throws IOException{        
+    public void lsRecursive(String path) throws IOException{          
         List<FEntry> result = ls(path,true);
         for(FEntry entry : result){
             if(entry.isFile()){
@@ -101,6 +105,7 @@ public class UtilOperations extends Operations {
             }
         }
     }
+    
     public void dump_syslog() throws IOException {
         int syslog_address = Utils.bigEndianByteArrayToInt(getClient().read(0x05095ECC, 4)) + 0x10;
         int block_size = 0x400;
@@ -113,12 +118,42 @@ public class UtilOperations extends Operations {
                 break;
             }
         }
+        getClient().FSA_Close(getClient().get_fsa_handle());
     }
-    
-    public int mkdir(String path, int flags) throws IOException{
+    public boolean cd() throws IOException {
+        return cd("");
+    }
+    public boolean cd(String path) throws IOException {
+        if(path.equals(".")){
+            return true;
+        }
+        if(path.equals("..")){
+            path = Utils.getParentDir(getClient().getCwd());
+        }
+        if(!path.startsWith("/")&& getClient().getCwd().startsWith("/")){
+            return cd(getClient().getCwd() + "/" + path);
+        }
         int fsa_handle = getClient().get_fsa_handle();
-        return fsa.FSA_MakeDir(fsa_handle, path, 2);
-    }    
+        String usedPath = path;
+        if(path.equals("..")){
+            usedPath = Utils.getParentDir(getClient().getCwd());
+            System.out.println(usedPath +" dd");
+        }else if (path.isEmpty()){
+            usedPath = getClient().getCwd();
+        }
+        boolean final_result = false;
+        Result<Integer> result = fsa.FSA_OpenDir(fsa_handle,usedPath);
+        if(result.getResultValue() == 0){
+            getClient().setCwd(usedPath);
+            fsa.FSA_CloseDir(fsa_handle, result.getData());
+            final_result = true;
+        }else{
+            Logger.logErr("path does not exists");
+            final_result = false;
+        }
+        getClient().FSA_Close(getClient().get_fsa_handle());
+        return final_result;
+    }
     
     public int mount(String device_path, String volume_path, int flags) throws IOException{        
         int fsa_handle = getClient().get_fsa_handle();

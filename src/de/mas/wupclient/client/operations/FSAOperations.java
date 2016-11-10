@@ -7,6 +7,7 @@ import java.util.Map;
 
 import de.mas.wupclient.client.WUPClient;
 import de.mas.wupclient.client.utils.FEntry;
+import de.mas.wupclient.client.utils.FStats;
 import de.mas.wupclient.client.utils.Logger;
 import de.mas.wupclient.client.utils.Result;
 import de.mas.wupclient.client.utils.Utils;
@@ -95,6 +96,9 @@ public class FSAOperations extends Operations {
     }
     
     public Result<Integer> FSA_OpenFile(int handle, String path, String mode) throws IOException{
+        if(!path.startsWith("/")){
+            path = getClient().getCwd() + "/" + path;
+        }
         byte[] inbuffer = new byte[0x520];
         Utils.writeNullTerminatedStringToByteArray(inbuffer, path, 0x04);
         Utils.writeNullTerminatedStringToByteArray(inbuffer, mode, 0x284);
@@ -111,6 +115,10 @@ public class FSAOperations extends Operations {
     }     
     
     public Result<byte[]> FSA_ReadFile(int handle, int file_handle, int size, int cnt) throws IOException{
+        if(size * cnt > WUPClient.MAX_READ_SIZE){
+            Logger.logErr("FSA_ReadFile error: size*cnt > " + WUPClient.MAX_READ_SIZE +"(" + (size * cnt) + ")");
+            return new Result<byte[]>(-228,new byte[0]);
+        }
         byte[] inbuffer = new byte[0x520];
         Utils.writeIntToByteArray(inbuffer, size, 0x08);
         Utils.writeIntToByteArray(inbuffer, cnt, 0x0C);
@@ -118,5 +126,23 @@ public class FSAOperations extends Operations {
         Result<byte[][]> result = system.ioctlv(handle, 0x0F, new byte[][] {inbuffer}, new int[]{size * cnt,0x293});
         
         return new Result<byte[]>(result.getResultValue(),result.getData()[0]);
+    }
+    
+    public Result<FStats> FSA_StatFile(int fsa_handle, int handle) throws IOException{
+        byte[] inbuffer = new byte[0x520];
+        Utils.writeIntToByteArray(inbuffer, handle, 0x04);
+
+        Result<byte[]> result = system.ioctl(fsa_handle, 0x14, inbuffer, 0x293);   
+        FStats stats = null;
+        if(result.getResultValue() == 0){
+            stats = new FStats(result.getData());
+        }
+        System.out.println(result.getResultValue());
+        return new Result<FStats>(result.getResultValue(), stats);
+    }
+
+    public Result<Integer> FSA_ReadFilePtr(int fsa_handle, int src_handle, int i, int block_size, int buffer_ptr) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

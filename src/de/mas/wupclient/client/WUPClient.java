@@ -13,6 +13,7 @@ import de.mas.wupclient.client.utils.Result;
 import de.mas.wupclient.client.utils.Utils;
 
 public class WUPClient {
+    public static final int MAX_READ_SIZE = 0x400;
     private String IP;
     private int fsaHandle = -1;
     private String cwd = "";
@@ -33,15 +34,19 @@ public class WUPClient {
             Logger.logErr("send failed");
             e.printStackTrace();
         }
-        ByteBuffer destByteBuffer = ByteBuffer.allocate(0x600);
+        
         byte[] result =  new byte[0x0600];
         int size = getSocket().getInputStream().read(result);
-        destByteBuffer.put(result, 0, size);
-        int returnValue = destByteBuffer.getInt();
-        return new Result<byte[]>(returnValue,Arrays.copyOfRange(result, 4,result.length));        
+        ByteBuffer destByteBuffer = ByteBuffer.allocate(0x04);        
+        destByteBuffer.put(Arrays.copyOfRange(result, 0, 4));
+        int returnValue = destByteBuffer.getInt(0);
+        return new Result<byte[]>(returnValue,Arrays.copyOfRange(result, 4,size));        
    }
     
    public byte[] read(int addr, int len) throws IOException{
+       if(len > WUPClient.MAX_READ_SIZE){
+           throw new IOException("read length > " + WUPClient.MAX_READ_SIZE);
+       }
        Result<byte[]> result = send(1, Utils.m_packBE(addr,len));
        if(result.getResultValue() == 0){
            return result.getData();
@@ -126,7 +131,7 @@ public class WUPClient {
             e.printStackTrace();
         }
         setSocket(clientSocket);
-        Logger.log("Connected");
+        Logger.log("Connected to " + ip);
         return clientSocket;        
     }
     
@@ -151,7 +156,7 @@ public class WUPClient {
     public String getCwd() {
         return cwd;
     }
-    private void setCwd(String cwd) {
+    public void setCwd(String cwd) {
         this.cwd = cwd;
     }
     public Socket getSocket() {

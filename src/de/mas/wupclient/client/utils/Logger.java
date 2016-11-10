@@ -5,7 +5,7 @@ public class Logger {
         System.out.println(log);
     }
     public static void logCmd(String log){
-        log(">>>" + log);
+        log("" + log);
     }
     public static void logErr(String log){
         System.err.println("> Error: " + log);
