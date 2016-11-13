@@ -35,5 +35,19 @@ public class FStats {
         StringBuilder sb = new StringBuilder();
         return sb.append("Size: " + size + " Physicalsize:" + physsize).toString();
     }
+    public int getSize() {
+        return size;
+    }
+    public void setSize(int size) {
+        this.size = size;
+    }
+    public int getPhyssize() {
+        return physsize;
+    }
+    public void setPhyssize(int physsize) {
+        this.physsize = physsize;
+    }
+    
+    
         
 }

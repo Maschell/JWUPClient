@@ -106,7 +106,7 @@ public class DownloadUploadOperations extends Operations {
                 if(read_result.getResultValue() <= 0)
                     break;
                 if((total_read /1024) % 50 == 0){
-                    System.out.println(String.format("%.3f", (double)(total_read /1024.0)) + " kb done");
+                    System.out.print("Downloading file: " + String.format("%.3f", (double)(total_read /1024.0)) + " kb done\r");
                 }
             }           
             fsa.FSA_CloseFile(fsa_handle, res.getData());

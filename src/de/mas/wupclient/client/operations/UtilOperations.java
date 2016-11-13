@@ -148,7 +148,7 @@ public class UtilOperations extends Operations {
             fsa.FSA_CloseDir(fsa_handle, result.getData());
             final_result = true;
         }else{
-            Logger.logErr("path does not exists");
+            Logger.logErr("path does not exists: error " + result.getResultValue());
             final_result = false;
         }
         getClient().FSA_Close(getClient().get_fsa_handle());

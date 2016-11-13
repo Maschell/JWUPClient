@@ -137,12 +137,29 @@ public class FSAOperations extends Operations {
         if(result.getResultValue() == 0){
             stats = new FStats(result.getData());
         }
-        System.out.println(result.getResultValue());
         return new Result<FStats>(result.getResultValue(), stats);
     }
 
-    public Result<Integer> FSA_ReadFilePtr(int fsa_handle, int src_handle, int i, int block_size, int buffer_ptr) {
-        // TODO Auto-generated method stub
-        return null;
+  
+    public Result<byte[]> FSA_ReadFilePtr(int handle, int filehandle, int size, int cnt, int ptr) throws IOException {
+        byte[] inbuffer = new byte[0x520];
+        Utils.writeIntToByteArray(inbuffer, size, 0x08);
+        Utils.writeIntToByteArray(inbuffer, cnt, 0x0C);
+        Utils.writeIntToByteArray(inbuffer, filehandle, 0x14);
+      
+        Result<byte[][]> result = system.ioctlv(handle, 0x0F, new byte[][] {inbuffer}, new int[]{0x293}, new int[0][], new int[][]{new int[]{ptr,size*cnt}});
+       
+        return new Result<byte[]>(result.getResultValue(),result.getData()[0]);
+    }
+
+    public Result<byte[]> FSA_WriteFilePtr(int handle, int file_handle, int size, int cnt, int ptr) throws IOException {
+        byte[] inbuffer = new byte[0x520];
+        Utils.writeIntToByteArray(inbuffer, size, 0x08);
+        Utils.writeIntToByteArray(inbuffer, cnt, 0x0C);
+        Utils.writeIntToByteArray(inbuffer, file_handle, 0x14);
+        
+        Result<byte[][]> result = system.ioctlv(handle, 0x10, new byte[][] {inbuffer}, new int[]{0x293}, new int[][]{new int[]{ptr,size*cnt}},new int[0][]);
+        
+        return new Result<byte[]>(result.getResultValue(),result.getData()[0]);
     }
 }

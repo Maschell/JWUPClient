@@ -4,6 +4,8 @@ import java.util.Scanner;
 
 import de.mas.wupclient.client.WUPClient;
 import de.mas.wupclient.client.operations.DownloadUploadOperations;
+import de.mas.wupclient.client.operations.DumperOperations;
+import de.mas.wupclient.client.operations.FileOperations;
 import de.mas.wupclient.client.operations.SpecialOperations;
 import de.mas.wupclient.client.operations.UtilOperations;
 
@@ -16,11 +18,12 @@ public class Starter {
         WUPClient w = new WUPClient(ip);
         try {            
             boolean exit = false;
-   
+        
             System.out.println("JWUPClient. Please enter a command. Enter \"exit\" to exit.");
             System.out.println();
             System.out.print(w.getCwd() + " > ");
             Scanner reader = new Scanner(System.in);  // Reading from System.in
+
             while(!exit){
                 
                 String input = reader.nextLine();
@@ -51,6 +54,8 @@ public class Starter {
         UtilOperations util = UtilOperations.UtilOperationsFactory(w);
         SpecialOperations special = SpecialOperations.SpecialOperationsFactory(w);
         DownloadUploadOperations dlul = DownloadUploadOperations.DownloadUploadOperationsFactory(w);
+        DumperOperations dump = DumperOperations.DumperOperationsFactory(w);
+       
         String[] inputs = input.split(" ");
         switch(inputs[0]){
             case "ls":
@@ -117,6 +122,24 @@ public class Starter {
             case "nandtickets": //download to full path
                 special.parseAndDownloadTickets();
                 
+                break;
+            case "dumpdisc":
+                String pattern = ".*";
+                boolean deepSearch = false;
+                if(inputs.length > 1){                    
+                    for(int i = 1;i < inputs.length;i++){
+                        if(inputs[i].equals("-file")){
+                            if(inputs.length >= i+1){
+                                pattern = inputs[i+1];
+                                i++;
+                            }
+                        }
+                        if(inputs[i].equals("-deepSearch")){
+                            deepSearch = true;
+                        }
+                    }
+                }
+                dump.dumpDisc(pattern,deepSearch);
                 break;
             default:
                 System.out.println("Command not found!");
