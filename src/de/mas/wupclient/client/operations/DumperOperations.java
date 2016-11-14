@@ -1,17 +1,11 @@
 package de.mas.wupclient.client.operations;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import de.mas.wupclient.client.WUPClient;
-import de.mas.wupclient.client.utils.FEntry;
 import de.mas.wupclient.client.utils.Logger;
 import de.mas.wupclient.client.utils.MetaInformation;
 import de.mas.wupclient.client.utils.Utils;

@@ -5,8 +5,6 @@ import java.util.Scanner;
 import de.mas.wupclient.client.WUPClient;
 import de.mas.wupclient.client.operations.DownloadUploadOperations;
 import de.mas.wupclient.client.operations.DumperOperations;
-import de.mas.wupclient.client.operations.FileOperations;
-import de.mas.wupclient.client.operations.SpecialOperations;
 import de.mas.wupclient.client.operations.UtilOperations;
 
 public class Starter {
@@ -19,7 +17,8 @@ public class Starter {
         try {            
             boolean exit = false;
         
-            System.out.println("JWUPClient. Please enter a command. Enter \"exit\" to exit.");
+            System.out.println("JWUPClient 0.1a");
+            System.out.println("Please enter a command. Enter \"exit\" to exit.");
             System.out.println();
             System.out.print(w.getCwd() + " > ");
             Scanner reader = new Scanner(System.in);  // Reading from System.in
@@ -29,6 +28,7 @@ public class Starter {
                 String input = reader.nextLine();
                 if(input.equals("exit")){
                     exit = true;
+                   
                     break;
                 }
                 processCommand(input,w);
@@ -52,7 +52,6 @@ public class Starter {
             return;
         }
         UtilOperations util = UtilOperations.UtilOperationsFactory(w);
-        SpecialOperations special = SpecialOperations.SpecialOperationsFactory(w);
         DownloadUploadOperations dlul = DownloadUploadOperations.DownloadUploadOperationsFactory(w);
         DumperOperations dump = DumperOperations.DumperOperationsFactory(w);
        
@@ -117,10 +116,6 @@ public class Starter {
                 }else if(inputs.length == 3){
                     dlul.downloadFile("", inputs[1],inputs[2] + "/" + w.getCwd());
                 }
-                
-                break;
-            case "nandtickets": //download to full path
-                special.parseAndDownloadTickets();
                 
                 break;
             case "dumpdisc":

@@ -118,7 +118,7 @@ public class FileOperations extends Operations {
             }
             i += result_val;
             Result<byte[]> result_write = fsa.FSA_WriteFilePtr(fsa_handle, dst_handle, 0x1, result_val, buffer_ptr);
-            int result_write_val = result_read.getResultValue();
+            int result_write_val = result_write.getResultValue();
             if(result_write_val < 0){
                 Logger.log("copyFile error: writing destination file failed.");
                 result = false;

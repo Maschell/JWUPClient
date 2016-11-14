@@ -125,10 +125,11 @@ public class WUPClient {
             clientSocket = new Socket(ip, 1337);
         } catch (UnknownHostException e) {
             Logger.logErr("Unkown Host");
-            e.printStackTrace();
+            Logger.logErr("Make sure you entered the correct ip (tried " + ip + ") and the wupserver in running.");
+            System.exit(-1);
         } catch (IOException e) {
             Logger.logErr("IO Error Host");
-            e.printStackTrace();
+            System.exit(-1);
         }
         setSocket(clientSocket);
         Logger.log("Connected to " + ip);
